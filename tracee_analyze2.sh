@@ -9,26 +9,11 @@ cleanup() {
 }
 trap cleanup EXIT SIGINT SIGTERM
 
-analyze_stream() {
-echo "[*] 啟動靜態分析器..."
-DANGEROUS_FUNCTIONS=("pam_authenticate" "pam_acct_mgmt" "open" "execve")
-declare -A SCANNED_FILES
-jq --unbuffered -r '.args[]? | select(.name=="pathname") | .value' | while read -r so_file; do
+perform_analysis() {
+    local so_file=$1
+    local defined_symbols=$(nm -D "$so_file" 2>/dev/null | grep -v ' U ' | awk '{print $3}')
+    local hook_found=0
     
-    if [ ! -f "$so_file" ] || [ ! -r "$so_file" ]; then continue; fi
-
-    file_hash=$(sha256sum "$so_file" | awk '{print $1}')
-
-    # 去重機制
-    if [[ -n "${SCANNED_FILES[$file_hash]}" ]]; then continue; fi
-    SCANNED_FILES[$file_hash]=1
-
-    echo "[*] [$(date '+%H:%M:%S')] 載入: $so_file (Hash: ${file_hash:0:8}...)"
-    
-    # 靜態分析
-    defined_symbols=$(nm -D "$so_file" 2>/dev/null | grep -v ' U ' | awk '{print $3}')
-    
-    hook_found=0
     for func in "${DANGEROUS_FUNCTIONS[@]}"; do
         if echo "$defined_symbols" | grep -qx "$func"; then
             echo -e "  \033[0;31m[!] 警告: 發現危險 Hook 實作 -> ${func}()\033[0m"
@@ -39,8 +24,62 @@ jq --unbuffered -r '.args[]? | select(.name=="pathname") | .value' | while read 
     if [ $hook_found -eq 0 ]; then
          echo "  [+] 安全: 未發現已知特徵。"
     fi
-    echo "---------------------------------------------------"
-done
+}
+
+analyze_stream() {
+echo "[*] 啟動靜態分析器..."
+DANGEROUS_FUNCTIONS=("pam_authenticate" "pam_acct_mgmt" "open" "execve")
+declare -A SCANNED_FILES
+jq --unbuffered -r '
+        select(.eventName == "shared_object_loaded" or .eventName == "ld_preload") | 
+
+        (
+        (.args[]? | select(.name=="pathname") | .value) //
+	(.args[]? | select(.name=="detectedFrom") | .value.args[]? | select(.name=="pathname") | .value) //
+	""
+	) as $pathname |
+
+        ([.args[]? | select(.name=="detectedFrom") | .value.name? | select(. != null)] | join(" ")) as $arg_names |
+        
+        "\(.eventName)\t\($pathname)\t\($arg_names)"
+    ' | while IFS=$'\t' read -r event_name target_file arg_names; do
+
+        # 過濾空行
+        if [ -z "$event_name" ]; then continue; fi
+
+        case "$event_name" in
+            
+            "ld_preload")
+                echo "---------------------------------------------------"
+                if [[ " $arg_names " == *" sched_process_exec "* ]]; then
+                    echo -e "\033[1;35m[!] 警報: environment variables changed\033[0m"
+                    echo "    目標程序: $target_file"
+                
+                elif [[ " $arg_names " == *" security_file_open "* ]]; then
+                    echo -e "\033[1;41;37m[!!!] 嚴重警報: /etc/ld.so.preload being accessed\033[0m"
+                
+                elif [[ " $arg_names " == *" security_inode_rename "* ]]; then
+                    echo -e "\033[1;41;37m[!!!] 嚴重警報: /etc/ld.so.preload renamed\033[0m"
+                
+                else
+                    echo -e "\033[1;33m[?] 警告: 未歸類的 LD_PRELOAD 觸發事件 (包含特徵: $arg_names)\033[0m"
+                fi
+                echo "---------------------------------------------------"
+                ;;
+
+            "shared_object_loaded")
+                if [ ! -f "$target_file" ] || [ ! -r "$target_file" ]; then continue; fi
+
+                file_hash=$(sha256sum "$target_file" | awk '{print $1}')
+                if [[ -n "${SCANNED_FILES[$file_hash]}" ]]; then continue; fi
+                SCANNED_FILES[$file_hash]=1
+
+                echo "[*] [$(date '+%H:%M:%S')] 載入: $target_file (Hash: ${file_hash:0:8}...)"
+                perform_analysis "$target_file"
+                echo "---------------------------------------------------"
+                ;;
+        esac
+    done
 }
 
 echo "[*] 啟動Tracee..."
