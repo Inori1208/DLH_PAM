@@ -1,16 +1,16 @@
 # Monitoring and detecting Dynamic Linker Hijacking against Linux Pluggable Authentication Module
 
 ## TODOs:
-- [x] Monitering service for /etc/pam.d & PAM core module.
-- [x] Monitering daemon service deployment script.
-- [x] Tracee contruction.
+- [x] Monitoring service for /etc/pam.d & PAM core module.
+- [x] Monitoring daemon service deployment script.
+- [x] Tracee construction.
 - [x] Analyzing scripts for Tracee output.
 - [ ] Daemon service for Tracee implementation.
 - [ ] Daemon service for analyzing scripts.
 
-> Most of the project is done, only the service implement scripts remains. 
+> Most of the project is done; only the service deployment scripts remain. 
 
-> The codes still needs to be tidy up in order to get formal output logs.
+> The codes still need to be tidied up to get formal output logs.
 
 ## Good luck
 
