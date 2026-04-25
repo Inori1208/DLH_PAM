@@ -30,22 +30,23 @@ perform_analysis() {
 }
 
 analyze_stream() {
-echo "[*] 啟動靜態分析器..."
-DANGEROUS_FUNCTIONS=("pam_authenticate" "pam_acct_mgmt" "open" "execve")
-declare -A SCANNED_FILES
-jq --unbuffered -r '
+    echo "[*] 啟動靜態分析器..."
+    DANGEROUS_FUNCTIONS=("pam_authenticate" "pam_acct_mgmt" "open" "execve")
+    declare -A SCANNED_FILES
+    jq --unbuffered -r '
         select(.eventName == "shared_object_loaded" or .eventName == "ld_preload") | 
 
         (
         (.args[]? | select(.name=="pathname") | .value) //
-	(.args[]? | select(.name=="detectedFrom") | .value.args[]? | select(.name=="pathname") | .value) //
-	""
-	) as $pathname |
+	    (.args[]? | select(.name=="detectedFrom") | .value.args[]? | select(.name=="pathname") | .value) //
+	    ""
+	    ) as $pathname |
 
         ([.args[]? | select(.name=="detectedFrom") | .value.name? | select(. != null)] | join(" ")) as $arg_names |
         
         "\(.eventName)\t\($pathname)\t\($arg_names)"
-    ' | while IFS=$'\t' read -r event_name target_file arg_names; do
+        
+        ' | while IFS=$'\t' read -r event_name target_file arg_names; do
 
         # 過濾空行
         if [ -z "$event_name" ]; then continue; fi

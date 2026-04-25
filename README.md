@@ -1,5 +1,20 @@
 # Monitoring and detecting Dynamic Linker Hijacking against Linux Pluggable Authentication Module
 
+## Requirement
+
+> [!NOTE]
+> This project is tested and ran on Ubuntu 22.04 LTS.
+
+This project required following tools to install in advanced:
+- OpenSSL dev
+- Docker
+- jq
+You can use following bash to install the requirement.
+```
+sudo apt update
+sudo apt install build-essential libssl-dev docker.io jq
+```
+
 ## TODOs:
 - [x] Monitoring service for /etc/pam.d & PAM core module.
 - [x] Monitoring daemon service deployment script.
