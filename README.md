@@ -5,12 +5,13 @@
 - [x] Monitoring daemon service deployment script.
 - [x] Tracee construction.
 - [x] Analyzing scripts for Tracee output.
-- [ ] Daemon service for Tracee implementation.
-- [ ] Daemon service for analyzing scripts.
+- [x] Daemon service for Tracee implementation.
+- [x] Daemon service for analyzing scripts.
+- [ ] Tidy up the codes to get formal output logs
+- [ ] (Optional) Output the Tracee Analyzer logs to files
 
-> Most of the project is done; only the service deployment scripts remain. 
-
-> The codes still need to be tidied up to get formal output logs.
+## Acknowledgement
+Special thanks to the team at Aqua Security for developing [Tracee](https://github.com/aquasecurity/tracee). This project utilizes its powerful eBPF-based system monitoring and event tracing framework to gather events and analyze advanced execution flow hijacking techniques.
 
 ## Good luck
 

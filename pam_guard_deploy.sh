@@ -43,7 +43,7 @@ if [ $? -ne 0 ]; then
 fi
 #echo "-> 編譯成功！已產生執行檔: $BINARY_NAME"
 
-#copy the executable
+#Copy the executable
 echo "[info] Compiled successfully."
 cp "$BINARY_NAME" "$TARGET_BINARY"
 chown root:root "$TARGET_BINARY"

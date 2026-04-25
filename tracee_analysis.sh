@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# This code utilizes security/forensics tool `Tracee` from Aqua Security
+# (https://github.com/aquasecurity/tracee) for event collection.
+
 
 cleanup() {
     echo -e "\n[*] 收到中斷訊號，正在關閉 Tracee 容器..."
