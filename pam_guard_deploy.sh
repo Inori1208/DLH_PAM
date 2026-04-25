@@ -80,7 +80,7 @@ systemctl restart "$SERVICE_NAME"
 #Check if the service is active
 if systemctl is-active --quiet "$SERVICE_NAME"; then
     echo -e "\033[0;32m[success] PAM Guard deployment successed.\033[0m"
-    echo "You can use \`sudo journalctl -u $SERVICE_NAME -f\` or tail -f /var/log/pam_guard.log"
+    echo "You can use \`sudo journalctl -u $SERVICE_NAME -f\` or \`tail -f /var/log/pam_guard.log\`"
     echo "to track down the output of the service."
 else
     echo -e "\033[0;31m[error] The service is registered, but it encountered some problem, the service is inactive.\033[0m"
