@@ -1,4 +1,6 @@
-# Monitoring and detecting Dynamic Linker Hijacking against Linux Pluggable Authentication Module
+# DLH_PAM
+
+This project aims to monitor and detect Dynamic Linker Hijacking against Linux Pluggable Authentication Module(PAM).
 
 ## Requirement
 
@@ -56,7 +58,7 @@ To test the functionality of the service, please open both services' log on the 
 - [x] Analyzing scripts for Tracee output.
 - [x] Daemon service for Tracee implementation.
 - [x] Daemon service for analyzing scripts.
-- [ ] Tidy up the codes to get formal output logs
+- [x] Tidy up the codes to get formal output logs
 - [ ] (Optional) Output the Tracee Analyzer logs to files
 
 ## Acknowledgement

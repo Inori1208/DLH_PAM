@@ -5,9 +5,9 @@
 
 
 cleanup() {
-    echo -e "\n[*] 收到中斷訊號，正在關閉 Tracee 容器..."
+    echo -e "\n[info] Shutting down Tracee container..."
     sudo docker rm -f tracee >/dev/null 2>&1
-    echo "[*] 監控已安全結束。"
+    echo "[info] The service has ended safely."
     exit 0
 }
 trap cleanup EXIT SIGINT SIGTERM
@@ -19,19 +19,19 @@ perform_analysis() {
     
     for func in "${DANGEROUS_FUNCTIONS[@]}"; do
         if echo "$defined_symbols" | grep -qx "$func"; then
-            echo -e "  \033[0;31m[!] 警告: 發現危險 Hook 實作 -> ${func}()\033[0m"
+            echo -e "\033[1;41;37m[Alert] Dangerous hooking implementation detected -> ${func}()\033[0m"
             hook_found=1
         fi
     done
 
     if [ $hook_found -eq 0 ]; then
-         echo "  [+] 安全: 未發現已知特徵。"
+         echo -e "\033[0;32m[safe] No known denger function detected.\033[0m"
     fi
 }
 
 analyze_stream() {
-    echo "[*] 啟動靜態分析器..."
-    DANGEROUS_FUNCTIONS=("pam_authenticate" "pam_acct_mgmt" "open" "execve")
+    echo "[info] Activating analyzer..."
+    DANGEROUS_FUNCTIONS=("pam_authenticate" "pam_acct_mgmt" "open" "execve" "pam_get_password" "pam_log_password" "pam_open_session" "pam_sm_authenticate")
     declare -A SCANNED_FILES
     jq --unbuffered -r '
         select(.eventName == "shared_object_loaded" or .eventName == "ld_preload") | 
@@ -56,17 +56,17 @@ analyze_stream() {
             "ld_preload")
                 echo "---------------------------------------------------"
                 if [[ " $arg_names " == *" sched_process_exec "* ]]; then
-                    echo -e "\033[1;35m[!] 警報: environment variables changed\033[0m"
-                    echo "    目標程序: $target_file"
+                    echo -e "\033[1;33m[warning]: Environment variables changed\033[0m"
+                    echo -e "\033[1;33m| Target file: $target_file\033[0m"
                 
                 elif [[ " $arg_names " == *" security_file_open "* ]]; then
-                    echo -e "\033[1;41;37m[!!!] 嚴重警報: /etc/ld.so.preload being accessed\033[0m"
+                    echo -e "\033[1;41;37m[alert]: /etc/ld.so.preload being accessed\033[0m"
                 
                 elif [[ " $arg_names " == *" security_inode_rename "* ]]; then
-                    echo -e "\033[1;41;37m[!!!] 嚴重警報: /etc/ld.so.preload renamed\033[0m"
+                    echo -e "\033[1;41;37m[alert]: /etc/ld.so.preload renamed\033[0m"
                 
                 else
-                    echo -e "\033[1;33m[?] 警告: 未歸類的 LD_PRELOAD 觸發事件 (包含特徵: $arg_names)\033[0m"
+                    echo -e "\033[1;33m[warning?] Uncategorized LD_PRELOAD event triggered (Detected feature: $arg_names)\033[0m"
                 fi
                 echo "---------------------------------------------------"
                 ;;
@@ -78,7 +78,7 @@ analyze_stream() {
                 if [[ -n "${SCANNED_FILES[$file_hash]}" ]]; then continue; fi
                 SCANNED_FILES[$file_hash]=1
 
-                echo "[*] [$(date '+%H:%M:%S')] 載入: $target_file (Hash: ${file_hash:0:8}...)"
+                echo "[info] [$(date '+%H:%M:%S')] Loaded: $target_file (Hash: ${file_hash:0:8}...)"
                 perform_analysis "$target_file"
                 echo "---------------------------------------------------"
                 ;;
@@ -86,7 +86,7 @@ analyze_stream() {
     done
 }
 
-echo "[*] 啟動Tracee..."
+echo "[info] Activating Tracee..."
 
 sudo docker run --name tracee --rm \
   --pid=host --cgroupns=host --privileged \
